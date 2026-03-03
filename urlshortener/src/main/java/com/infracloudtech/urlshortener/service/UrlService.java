@@ -1,6 +1,7 @@
 package com.infracloudtech.urlshortener.service;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UrlService {
 
@@ -8,5 +9,5 @@ public interface UrlService {
 
     String getOriginalUrl(String shortCode);
 
-    List<String> getTop3Domains();
+    Map<String, Long> getTop3Domains();
 }

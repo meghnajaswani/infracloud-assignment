@@ -1,13 +1,14 @@
 package com.infracloudtech.urlshortener.service;
 
+import com.infracloudtech.urlshortener.exception.UrlNotFoundException;
 import com.infracloudtech.urlshortener.repository.UrlRepository;
 import com.infracloudtech.urlshortener.util.Base62Encoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
-import java.util.Comparator;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -41,23 +42,34 @@ public class UrlServiceImpl implements UrlService {
 
     @Override
     public String getOriginalUrl(String shortCode) {
-        return repository.getUrl(shortCode);
+
+        String url = repository.getUrl(shortCode);
+
+        if (url == null) {
+            throw new UrlNotFoundException("Short URL not found: " + shortCode);
+        }
+
+        return url;
     }
 
     @Override
-    public List<String> getTop3Domains() {
+    public Map<String, Long> getTop3Domains() {
 
-        Map<String, Long> domainCount =
-                repository.getAllUrls().keySet().stream()
-                        .collect(Collectors.groupingBy(
-                                url -> URI.create(url).getHost(),
-                                Collectors.counting()
-                        ));
-
-        return domainCount.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+        return repository.getAllUrls().keySet().stream()  // ✅ use keys
+                .map(url -> URI.create(url.trim()).getHost())
+                .filter(host -> host != null)
+                .collect(Collectors.groupingBy(
+                        host -> host,
+                        Collectors.counting()
+                ))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(3)
-                .map(entry -> entry.getKey() + " : " + entry.getValue())
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
     }
 }
