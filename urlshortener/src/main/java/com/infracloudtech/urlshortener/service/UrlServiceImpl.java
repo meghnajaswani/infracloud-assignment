@@ -19,17 +19,21 @@ public class UrlServiceImpl implements UrlService {
     private final UrlRepository repository;
     private final AtomicLong counter = new AtomicLong(1);
 
+
     @Override
     public String shortenUrl(String originalUrl) {
 
+        // Step 1: Check if URL already exists
         String existingCode = repository.getCode(originalUrl);
         if (existingCode != null) {
             return existingCode;
         }
 
+        // Step 2: Generate new ID
         long id = counter.getAndIncrement();
         String shortCode = Base62Encoder.encode(id);
 
+        // Step 3: Save mapping
         repository.save(originalUrl, shortCode);
 
         return shortCode;
