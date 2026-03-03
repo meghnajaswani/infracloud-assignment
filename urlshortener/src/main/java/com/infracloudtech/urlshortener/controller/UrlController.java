@@ -1,6 +1,9 @@
 package com.infracloudtech.urlshortener.controller;
 
+import com.infracloudtech.urlshortener.dto.ShortenRequest;
+import com.infracloudtech.urlshortener.dto.ShortenResponse;
 import com.infracloudtech.urlshortener.service.UrlService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,17 +20,19 @@ public class UrlController {
     private final UrlService service;
 
     @PostMapping("/shorten")
-    public ResponseEntity<String> shorten(
-            @RequestParam String url,
-            HttpServletRequest request) {
+    public ResponseEntity<ShortenResponse> shorten(
+            @Valid @RequestBody ShortenRequest request,
+            HttpServletRequest httpRequest) {
 
-        String code = service.shortenUrl(url);
+        String code = service.shortenUrl(request.url());
 
-        String baseUrl = request.getRequestURL()
+        String baseUrl = httpRequest.getRequestURL()
                 .toString()
-                .replace(request.getRequestURI(), "");
+                .replace(httpRequest.getRequestURI(), "");
 
-        return ResponseEntity.ok(baseUrl + "/" + code);
+        return ResponseEntity.ok(
+                new ShortenResponse(baseUrl + "/" + code)
+        );
     }
 
     @GetMapping("/{code}")
@@ -36,7 +42,7 @@ public class UrlController {
     }
 
     @GetMapping("/metrics")
-    public ResponseEntity<List<String>> metrics() {
+    public ResponseEntity<Map<String, Long>> metrics() {
         return ResponseEntity.ok(service.getTop3Domains());
     }
 }
