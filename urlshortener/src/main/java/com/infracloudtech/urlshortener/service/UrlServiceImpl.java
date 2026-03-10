@@ -5,6 +5,8 @@ import com.infracloudtech.urlshortener.repository.UrlRepository;
 import com.infracloudtech.urlshortener.util.Base62Encoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -19,10 +21,13 @@ public class UrlServiceImpl implements UrlService {
 
     private final UrlRepository repository;
     private final AtomicLong counter = new AtomicLong(1);
+    private final Logger log = LoggerFactory.getLogger(UrlServiceImpl.class);
+
 
 
     @Override
     public String shortenUrl(String originalUrl) {
+
 
         // Step 1: Check if URL already exists
         String existingCode = repository.getCode(originalUrl);
@@ -32,7 +37,9 @@ public class UrlServiceImpl implements UrlService {
 
         // Step 2: Generate new ID
         long id = counter.getAndIncrement();
+        log.info("Generated ID: {}", id);
         String shortCode = Base62Encoder.encode(id);
+        log.info("Generated Short Code: {}", shortCode);
 
         // Step 3: Save mapping
         repository.save(originalUrl, shortCode);
